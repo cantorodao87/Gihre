@@ -1,0 +1,31 @@
+@startuml
+
+entity trabajadores {
+    *id : INTEGER [PK]
+    nombre : TEXT
+    grupo : INTEGER
+    graficos : TEXT
+}
+
+entity turnos {
+    *id : INTEGER [PK]
+    hora_comienzo : TEXT
+    hora_final : TEXT
+}
+
+entity asignacion {
+    *id : INTEGER [PK]
+    dia : INTEGER
+    trabajador_id : INTEGER [FK] --> trabajadores.id
+    turno_id : INTEGER [FK] --> turnos.id
+    --
+    UNIQUE (dia, trabajador_id, turno_id)
+}
+
+entity grafico {
+    *id_clave : INTEGER [PK]
+    id_grafico : TEXT
+    turno : INTEGER
+}
+
+@enduml
