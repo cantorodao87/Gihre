@@ -5,6 +5,7 @@ import calendar
 from datetime import datetime
 
 from db.py_gihre_db import obtener_turnos_mes
+from utils import convertir_dia_natural_a_bd
 
 
 def mostrar_turnos():
@@ -16,7 +17,7 @@ def mostrar_turnos():
         tree.delete(i)
 
     for id_trabajador, nombre in trabajadores:
-        valores = [asignaciones[id_trabajador][dia] for dia in range(1, calendar.monthrange(anho, mes)[1] + 1)]
+        valores = [asignaciones[id_trabajador].get(convertir_dia_natural_a_bd(dia, mes, anho), "") for dia in range(1, calendar.monthrange(anho, mes)[1] + 1)]
         tree.insert("", "end", values=[nombre] + valores)
 
 

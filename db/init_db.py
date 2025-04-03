@@ -21,19 +21,19 @@ def inicializar_datos():
     py_gihre_db.insertar_trabajador("Alex", 2, "[A, B]")
 
     # Insertar turnos
-    py_gihre_db.insertar_clave(1,"5:15", "11:30")
-    py_gihre_db.insertar_clave(2, "15:30", "21:30")
+    py_gihre_db.insertar_clave(1, "T", "5:15", "11:30")
+    py_gihre_db.insertar_clave(2, "T", "15:30", "21:30")
 
-    py_gihre_db.insertar_clave(3,"20:45", "00:00")
-    py_gihre_db.insertar_clave(4, "00:00", "08:00")
-    py_gihre_db.insertar_clave(5, "07:30", "12:00")
-    py_gihre_db.insertar_clave(6, "10:00", "17:00")
+    py_gihre_db.insertar_clave(3, "T", "20:45", "00:00")
+    py_gihre_db.insertar_clave(4, "T", "00:00", "08:00")
+    py_gihre_db.insertar_clave(5, "T", "07:30", "12:00")
+    py_gihre_db.insertar_clave(6, "T", "10:00", "17:00")
 
-    py_gihre_db.insertar_clave(10, "05:15", "11:30")
-    py_gihre_db.insertar_clave(11, "14:15", "21:15")
+    py_gihre_db.insertar_clave(10, "R",  "05:15", "11:30")
+    py_gihre_db.insertar_clave(11, "R", "14:15", "21:15")
 
-    py_gihre_db.insertar_clave(99, "0", "0")
-    py_gihre_db.insertar_clave(0, "0", "0")
+    py_gihre_db.insertar_clave(99, "D", "0", "0")
+    py_gihre_db.insertar_clave(0, "D", "0", "0")
 
     # Insertar gráficos
     py_gihre_db.insertar_grafico("A", "[2,2,2,2,2,99,99,99,10,1,1,1,1,99,99,99]")

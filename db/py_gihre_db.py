@@ -26,6 +26,7 @@ def init_db():
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS claves (
         id_clave INTEGER PRIMARY KEY,
+        tipo TEXT NOT NULL,
         hora_comienzo TEXT NOT NULL,
         hora_final TEXT NOT NULL
     )
@@ -85,11 +86,11 @@ def insertar_trabajador(nombre, grupo, graficos):
     conn.close()
 
 
-def insertar_clave(clave, hora_comienzo, hora_final):
+def insertar_clave(clave, tipo, hora_comienzo, hora_final):
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    cursor.execute("INSERT INTO claves (id_clave, hora_comienzo, hora_final) VALUES (?, ?, ?)",
-                   (clave, hora_comienzo, hora_final))
+    cursor.execute("INSERT INTO claves (id_clave, tipo, hora_comienzo, hora_final) VALUES (?, ?, ?, ?)",
+                   (clave, tipo, hora_comienzo, hora_final))
     conn.commit()
     conn.close()
 
@@ -119,6 +120,14 @@ def obtener_claves():
 
 def obtener_asignaciones():
     return select_all("asignaciones")
+
+def obtener_asignaciones_dia(dia):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute(f"SELECT * FROM asignaciones WHERE dia = ?;", (dia,))
+    rows = cursor.fetchall()
+    conn.close()
+    return rows
 
 
 def obtener_graficos():
