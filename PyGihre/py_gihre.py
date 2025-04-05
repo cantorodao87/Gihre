@@ -1,49 +1,42 @@
-from itertools import cycle
-import sqlite3
-from db.py_gihre_db import insertar_asignacion, obtener_trabajadores, obtener_asignaciones_dia
+from db.py_gihre_db import insertar_asignacion, obtener_trabajadores, obtener_asignaciones_dia, obtener_claves, \
+    obtener_graficos
 from utils import calcular_rango_anual
 
-# Definición de constantes
-TURNOS = [1, 2, 3, 4, 5, 6, 10]  # El 10 es reserva
-DESCANSO = 99
-
-# Gráficos para Diego y Carlos
-GRAFICO_CARLOS = [2, 2, 2, 2, 2, DESCANSO, DESCANSO, DESCANSO, 10, 1, 1, 1, 1, DESCANSO, DESCANSO, DESCANSO]
-GRAFICO_DIEGO = [10, 1, 1, 1, 1, DESCANSO, DESCANSO, DESCANSO, 2, 2, 2, 2, 2, DESCANSO, DESCANSO, DESCANSO]
-
-# Gráfico general
-GRAFICO_GENERAL = [3, 4, 5, 6, 10, DESCANSO, DESCANSO, DESCANSO, 10, 3, 4, 5, 6, DESCANSO, DESCANSO, DESCANSO]
 
 def generar_turnos_manual(anho):
-    """Genera y asigna turnos manualmente para todo el año según el gráfico general, evitando duplicados."""
-    trabajadores = obtener_trabajadores()
+    """Genera y asigna turnos manualmente para el año según el gráfico general, evitando duplicados."""
+
+    # Obtenemos el rango de días del año
     primer_dia, ultimo_dia = calcular_rango_anual(anho)
 
-    for trabajador in trabajadores:
-        id_trabajador = trabajador[0]
-        grupo = trabajador[2]
-        grafico = GRAFICO_GENERAL
-        if id_trabajador == 1:
-            grafico = GRAFICO_CARLOS
-        elif id_trabajador == 4:
-            grafico = GRAFICO_DIEGO
+    # Obtener todos los trabajadores, claves y gráficos
+    trabajadores = obtener_trabajadores()  # Obtiene todos los trabajadores
+    claves = obtener_claves()  # Obtiene todas las claves (turnos)
+    graficos = obtener_graficos()  # Obtiene todos los gráficos de turnos de los trabajadores
 
-        longitud_grafico = len(grafico)
+    for dia in range(primer_dia, ultimo_dia + 1):
+        for trabajador in trabajadores:
+            id_grafico = trabajador.grafico  # Gráfico asociado al trabajador
+            grupo = trabajador.grupo  # Grupo al que pertenece el trabajador
 
-        for i, dia in enumerate(range(primer_dia, ultimo_dia + 1)):
-            turno_asignado = grafico[(i+grupo-1) % longitud_grafico]
-            if turno_asignado == DESCANSO:
-                None
+            # Comprobar si existen gráficos y si el trabajador tiene un gráfico asignado
+            if graficos:
+                grafico = next((g for g in graficos if g.nombre == id_grafico), None)  # Buscar gráfico por nombre
+
+                if grafico:
+                    # Convertir los turnos del gráfico en una tupla de enteros
+                    ids_claves = tuple(map(int, grafico.turnos.strip('[]').split(',')))
+
+                    # Calcular la clave correspondiente al día actual y el grupo
+                    clave = ids_claves[(dia + grupo - 1) % len(ids_claves)]  # La clave correspondiente al turno
+
+                    # Insertar la asignación en la base de datos
+                    insertar_asignacion(dia, trabajador.id, clave)
+                else:
+                    print(
+                        f"Advertencia: El trabajador {trabajador.nombre} tiene un gráfico no encontrado: {id_grafico}")
             else:
-                # Comprobar si el turno ya está asignado en la BBDD
-                turnos_existentes = obtener_asignaciones_dia(dia)
-                # Extraer los turnos de las asignaciones (el 4º elemento de la tupla es el turno)
-                turnos_dia = [turno for _, _, _, turno in turnos_existentes]
-                if turno_asignado in turnos_dia:
-                    turno_asignado = 10  # Reserva si el turno ya existe
-
-            # Insertar la asignación en la base de datos
-            insertar_asignacion(dia, id_trabajador, turno_asignado)
+                print("Advertencia: No hay gráficos disponibles.")
 
 
 if __name__ == "__main__":

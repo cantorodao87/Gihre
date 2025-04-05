@@ -1,174 +1,118 @@
-import sqlite3
-import os
-import calendar
+from datetime import datetime
 
-from utils import calcular_rango_dias
+from sqlalchemy import delete
+from sqlalchemy.orm import joinedload
 
-# Obtener la ruta absoluta de la carpeta "db"
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # Carpeta "db"
-DB_PATH = os.path.join(BASE_DIR, "py_gihre.db")  # Ruta a la base de datos dentro de "db"
-
-def init_db():
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-
-    # Tabla de trabajadores
-    cursor.execute('''
-    CREATE TABLE IF NOT EXISTS trabajadores (
-        id_trabajador INTEGER PRIMARY KEY AUTOINCREMENT,
-        nombre TEXT NOT NULL,
-        grupo INTEGER NOT NULL,
-        graficos TEXT
-    )
-    ''')
-
-    # Tabla de claves
-    cursor.execute('''
-    CREATE TABLE IF NOT EXISTS claves (
-        id_clave INTEGER PRIMARY KEY,
-        tipo TEXT NOT NULL,
-        hora_comienzo TEXT NOT NULL,
-        hora_final TEXT NOT NULL
-    )
-    ''')
-
-    # Tabla de gráficos
-    cursor.execute('''
-    CREATE TABLE IF NOT EXISTS graficos (
-        id_grafico INTEGER PRIMARY KEY AUTOINCREMENT,
-        nombre_grafico TEXT NOT NULL,
-        turnos TEXT NOT NULL
-    )
-    ''')
-
-    # Tabla de asignación de turnos
-    cursor.execute('''
-    CREATE TABLE IF NOT EXISTS asignaciones (
-        id_asignacion INTEGER PRIMARY KEY AUTOINCREMENT,
-        dia INTEGER NOT NULL,
-        id_trabajador INTEGER NOT NULL,
-        id_clave INTEGER NOT NULL,
-        UNIQUE(dia, id_trabajador, id_clave),
-        FOREIGN KEY (id_trabajador) REFERENCES trabajadores(id_trabajador),
-        FOREIGN KEY (id_clave) REFERENCES claves(id_clave)
-    )
-    ''')
-
-    conn.commit()
-    conn.close()
-
-
-def select_all(table_name):
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute(f"SELECT * FROM {table_name}")
-    rows = cursor.fetchall()
-    conn.close()
-    return rows
-
-def delete_all(table_name):
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute(f"DELETE FROM {table_name}")
-    conn.commit()
-    conn.close()
+from db.db_setup import SessionLocal
+from db.models import Trabajador, Clave, Asignacion, Grafico
 
 def vaciar_todas_las_tablas():
-    tablas = ["trabajadores", "claves", "asignaciones", "graficos"]
-    for tabla in tablas:
-        delete_all(tabla)
-
-def insertar_trabajador(nombre, grupo, graficos):
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute("INSERT INTO trabajadores (nombre, grupo, graficos) VALUES (?, ?, ?)", (nombre, grupo, graficos))
-    conn.commit()
-    conn.close()
-
-
-def insertar_clave(clave, tipo, hora_comienzo, hora_final):
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute("INSERT INTO claves (id_clave, tipo, hora_comienzo, hora_final) VALUES (?, ?, ?, ?)",
-                   (clave, tipo, hora_comienzo, hora_final))
-    conn.commit()
-    conn.close()
-
-def insertar_asignacion(dia, trabajador_id, clave_id):
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute("INSERT INTO asignaciones (dia, id_trabajador, id_clave) VALUES (?, ?, ?)",
-                   (dia, trabajador_id, clave_id))
-    conn.commit()
-    conn.close()
-
-def insertar_grafico(nombre_grafico, turnos):
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute("INSERT INTO graficos (nombre_grafico, turnos) VALUES (?, ?)", (nombre_grafico, turnos))
-    conn.commit()
-    conn.close()
-
+    with SessionLocal() as session:
+        # El orden importa por las relaciones (FKs)
+        session.execute(delete(Asignacion))
+        session.execute(delete(Trabajador))
+        session.execute(delete(Clave))
+        session.execute(delete(Grafico))
+        session.commit()
 
 def obtener_trabajadores():
-    return select_all("trabajadores")
-
+    with SessionLocal() as session:
+        return session.query(Trabajador).all()
 
 def obtener_claves():
-    return select_all("claves")
-
+    with SessionLocal() as session:
+        return session.query(Clave).all()
 
 def obtener_asignaciones():
-    return select_all("asignaciones")
-
-def obtener_asignaciones_dia(dia):
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute(f"SELECT * FROM asignaciones WHERE dia = ?;", (dia,))
-    rows = cursor.fetchall()
-    conn.close()
-    return rows
-
+    with SessionLocal() as session:
+        return session.query(Asignacion).all()
 
 def obtener_graficos():
-    return select_all("graficos")
+    with SessionLocal() as session:
+        return session.query(Grafico).all()
+
+def obtener_asignaciones_dia(dia: int):
+    with SessionLocal() as session:
+        asignaciones = (
+            session.query(Asignacion)
+            .filter(Asignacion.dia == dia)
+            .options(joinedload(Asignacion.clave))
+            .all()
+        )
+    return asignaciones
+
+def insertar_asignacion(dia: int, trabajador_id: int, clave_id: int):
+    with SessionLocal() as session:
+        nueva = Asignacion(dia=dia, trabajador_id=trabajador_id, clave_id=clave_id)
+        session.add(nueva)
+        session.commit()
+
+def obtener_grafico_por_nombre(nombre: str):
+    with SessionLocal() as session:
+        return session.query(Grafico).filter_by(nombre=nombre).first()
+
+def insertar_grafico(nombre: str, turnos: str):
+    with SessionLocal() as session:
+        nuevo = Grafico(nombre=nombre, turnos=turnos)
+        session.add(nuevo)
+        session.commit()
+
+def insertar_trabajador(nombre: str, grupo: int, grafico: str = None):
+    with SessionLocal() as session:
+        nuevo = Trabajador(nombre=nombre, grupo=grupo, grafico=grafico)
+        session.add(nuevo)
+        session.commit()
+
+def insertar_clave(id_clave: int, tipo: str, hora_comienzo: str, hora_final: str):
+    with SessionLocal() as session:
+        nueva = Clave(id=id_clave, tipo=tipo, hora_comienzo=hora_comienzo, hora_final=hora_final)
+        session.add(nueva)
+        session.commit()
 
 
-def obtener_turnos_mes(anho, mes):
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
+def obtener_turnos_mes(mes: int, ano: int):
+    """
+    Obtiene los turnos de los trabajadores para un mes y año específicos.
 
-    # Obtener trabajadores
-    cursor.execute("SELECT id_trabajador, nombre FROM trabajadores")
-    trabajadores = cursor.fetchall()
+    Parámetros:
+    db: La sesión de la base de datos.
+    mes: El mes del que se quieren obtener los turnos (1-12).
+    ano: El año del que se quieren obtener los turnos.
 
-    inicio, fin = calcular_rango_dias(mes, anho)
+    Retorna:
+    Una lista de diccionarios con los datos de los turnos.
+    """
+    with SessionLocal() as session:
+        # Fecha de inicio y fin del mes
+        primer_dia = datetime.date(ano, mes, 1)
+        if mes == 12:
+            ultimo_dia = datetime.date(ano + 1, 1, 1) - datetime.timedelta(days=1)
+        else:
+            ultimo_dia = datetime.date(ano, mes + 1, 1) - datetime.timedelta(days=1)
 
-    # Obtener turnos asignados
-    cursor.execute("""
-    SELECT 
-    a.dia, 
-    t.nombre AS trabajador,
-    t.id_trabajador AS id_trabajador, 
-    c.id_clave AS clave
-    FROM asignaciones a
-    JOIN trabajadores t ON a.id_trabajador = t.id_trabajador
-    JOIN claves c ON a.id_clave = c.id_clave
-    WHERE a.dia BETWEEN ? AND ? 
-    ORDER BY a.dia, t.nombre;
-    """, (inicio, fin))
+        # Consulta para obtener las asignaciones dentro del rango de fechas
+        asignaciones = session.query(Asignacion, Trabajador, Clave) \
+            .join(Trabajador, Trabajador.id == Asignacion.trabajador_id) \
+            .join(Clave, Clave.id == Asignacion.clave_id) \
+            .filter(Asignacion.dia >= primer_dia.day) \
+            .filter(Asignacion.dia <= ultimo_dia.day) \
+            .all()
 
-    asignaciones = cursor.fetchall()
+        # Procesar los resultados y agruparlos por trabajador
+        turnos_mes = {}
 
-    #print(asignaciones)
+        for asignacion, trabajador, clave in asignaciones:
+            trabajador_nombre = trabajador.nombre
+            turno = {
+                "tipo": clave.tipo,
+                "hora_comienzo": clave.hora_comienzo,
+                "hora_final": clave.hora_final,
+                "dia": asignacion.dia
+            }
 
-    conn.close()
+            if trabajador_nombre not in turnos_mes:
+                turnos_mes[trabajador_nombre] = []
 
-    # Crear diccionario de turnos
-    turnos_dict = {trabajador[0]: {dia: "" for dia in range(1, calendar.monthrange(anho, mes)[1] + 1)} for trabajador in trabajadores}
-    #
-    for dia, trabajador, id_trabajador, clave in asignaciones:
-         if id_trabajador in turnos_dict:
-             turnos_dict[id_trabajador][dia] = clave
+            turnos_mes[trabajador_nombre].append(turno)
 
-    return trabajadores, turnos_dict
+    return turnos_mes
