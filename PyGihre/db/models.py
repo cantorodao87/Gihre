@@ -3,6 +3,7 @@ from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()
 
+
 class Trabajador(Base):
     __tablename__ = 'trabajadores'
 
@@ -13,7 +14,17 @@ class Trabajador(Base):
 
     asignaciones = relationship("Asignacion", back_populates="trabajador")
 
+
 class Clave(Base):
+    """
+    Tipos de clave:
+    - T: Turno de trabajo normal.
+    - T:D4: Turno con obligación de asignar la clave 4 el día siguiente.
+    - T:A3: Turno con obligación de asignar la clave 3 el día anterior.
+    - R: Reserva.
+    - D: Descanso.
+    - P: Permiso.
+    """
     __tablename__ = 'claves'
 
     id = Column('id_clave', Integer, primary_key=True)
@@ -22,6 +33,7 @@ class Clave(Base):
     hora_final = Column(String, nullable=False)
 
     asignaciones = relationship("Asignacion", back_populates="clave")
+
 
 class Asignacion(Base):
     __tablename__ = 'asignaciones'
@@ -33,6 +45,7 @@ class Asignacion(Base):
 
     trabajador = relationship("Trabajador", back_populates="asignaciones")
     clave = relationship("Clave", back_populates="asignaciones")
+
 
 class Grafico(Base):
     __tablename__ = 'graficos'

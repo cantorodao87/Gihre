@@ -1,8 +1,7 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-
 import os
 
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
 #DATABASE_URL = "sqlite:///db/gihre.db"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))

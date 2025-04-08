@@ -7,6 +7,7 @@ from py_gihre_db import (
     insertar_grafico
 )
 
+
 def inicializar_datos():
     vaciar_todas_las_tablas()
 
@@ -28,8 +29,8 @@ def inicializar_datos():
     insertar_clave(1, "T", "5:15", "11:30")
     insertar_clave(2, "T", "15:30", "21:30")
 
-    insertar_clave(3, "T", "20:45", "00:00")
-    insertar_clave(4, "T", "00:00", "08:00")
+    insertar_clave(3, "T:D4", "20:45", "00:00")
+    insertar_clave(4, "T:A3", "00:00", "08:00")
     insertar_clave(5, "T", "07:30", "12:00")
     insertar_clave(6, "T", "10:00", "17:00")
 
@@ -40,8 +41,9 @@ def inicializar_datos():
     insertar_clave(0, "D", "0", "0")
 
     # Insertar gráficos
-    insertar_grafico("A", "[2,2,2,2,10,99,99,99,10,1,1,1,1,99,99,99]")
-    insertar_grafico("B", "[2,3,4,5,6,99,99,99,3,4,5,6,1,99,99,99]")
+    insertar_grafico("A", "[2,2,2,2,10,0,0,0,10,1,1,1,1,0,0,0]")
+    insertar_grafico("B", "[2,3,4,5,6,0,0,0,3,4,5,6,1,0,0,0,3,4,5,6,10,0,0,0]")
+
 
 if __name__ == "__main__":
     Base.metadata.create_all(engine)

@@ -1,6 +1,7 @@
 import tkinter as tk
-from tkinter import ttk
 import tkinter.simpledialog as simpledialog
+from tkinter import ttk
+
 from db.py_gihre_db import obtener_trabajadores, obtener_asignaciones_dia
 from utils import calcular_rango_anual  # Para obtener el rango de días del año
 
@@ -48,6 +49,7 @@ def generar_tabla():
 
         tabla.insert("", "end", values=fila)
 
+
 def on_item_click(event):
     """Función para editar la celda seleccionada."""
     item = tabla.selection()[0]  # Obtener el item seleccionado
@@ -60,6 +62,7 @@ def on_item_click(event):
         new_value = tk.simpledialog.askstring("Editar turno", f"Nuevo valor para el día {col}:", initialvalue=old_value)
         if new_value:
             tabla.item(item, values=tuple(new_value if i == col else tabla.item(item, "values")[i] for i in range(len(tabla["columns"]))))
+
 
 # Crear la ventana principal
 root = tk.Tk()

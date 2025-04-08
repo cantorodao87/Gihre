@@ -6,6 +6,7 @@ from sqlalchemy.orm import joinedload
 from db.db_setup import SessionLocal
 from db.models import Trabajador, Clave, Asignacion, Grafico
 
+
 def vaciar_todas_las_tablas():
     with SessionLocal() as session:
         # El orden importa por las relaciones (FKs)
@@ -15,21 +16,26 @@ def vaciar_todas_las_tablas():
         session.execute(delete(Grafico))
         session.commit()
 
+
 def obtener_trabajadores():
     with SessionLocal() as session:
         return session.query(Trabajador).all()
+
 
 def obtener_claves():
     with SessionLocal() as session:
         return session.query(Clave).all()
 
+
 def obtener_asignaciones():
     with SessionLocal() as session:
         return session.query(Asignacion).all()
 
+
 def obtener_graficos():
     with SessionLocal() as session:
         return session.query(Grafico).all()
+
 
 def obtener_asignaciones_dia(dia: int):
     with SessionLocal() as session:
@@ -41,15 +47,37 @@ def obtener_asignaciones_dia(dia: int):
         )
     return asignaciones
 
+
+def obtener_asignacion(dia: int, trabajador_id: int):
+    """
+    Devuelve la clave asignada a un trabajador en un día concreto.
+
+    :param dia: Día del año (int)
+    :param trabajador_id: ID del trabajador
+    :return: ID de la clave asignada o None si no hay asignación
+    """
+    with SessionLocal() as session:
+        asignacion = session.query(Asignacion).filter_by(
+            dia=dia,
+            trabajador_id=trabajador_id
+        ).first()
+
+        if asignacion:
+            return asignacion.clave_id
+    return None
+
+
 def insertar_asignacion(dia: int, trabajador_id: int, clave_id: int):
     with SessionLocal() as session:
         nueva = Asignacion(dia=dia, trabajador_id=trabajador_id, clave_id=clave_id)
         session.add(nueva)
         session.commit()
 
+
 def obtener_grafico_por_nombre(nombre: str):
     with SessionLocal() as session:
         return session.query(Grafico).filter_by(nombre=nombre).first()
+
 
 def insertar_grafico(nombre: str, turnos: str):
     with SessionLocal() as session:
@@ -57,11 +85,13 @@ def insertar_grafico(nombre: str, turnos: str):
         session.add(nuevo)
         session.commit()
 
+
 def insertar_trabajador(nombre: str, grupo: int, grafico: str = None):
     with SessionLocal() as session:
         nuevo = Trabajador(nombre=nombre, grupo=grupo, grafico=grafico)
         session.add(nuevo)
         session.commit()
+
 
 def insertar_clave(id_clave: int, tipo: str, hora_comienzo: str, hora_final: str):
     with SessionLocal() as session:
