@@ -1,6 +1,29 @@
 from db.py_gihre_db import insertar_asignacion, obtener_trabajadores, obtener_claves, \
-    obtener_graficos, obtener_asignacion
-from utils import calcular_rango_anual, modo_debug
+    obtener_graficos, obtener_asignacion, actualizar_asignacion, obtener_asignaciones_dia
+from utils import calcular_rango_anual, modo_debug, log_turno_asignado, log_turno_modificado
+
+
+def cubrir_turnos_descubiertos_con_reservas(anho):
+    claves = obtener_claves()
+    claves_trabajo = [c for c in claves if c.tipo.startswith("T")]
+
+    # Obtenemos el rango de días del año
+    primer_dia, ultimo_dia = calcular_rango_anual(anho)
+
+    if modo_debug():
+        ultimo_dia = 31  # Solo enero en modo debug
+
+    for dia in range(primer_dia, ultimo_dia + 1):
+        asignaciones = obtener_asignaciones_dia(dia)
+        asignadas_ids = {a.clave.id for a in asignaciones}
+        no_asignadas = [c for c in claves_trabajo if c.id not in asignadas_ids]
+
+        reservas = [a for a in asignaciones if a.clave.tipo == "R"]
+        for clave_descubierta in no_asignadas:
+            if reservas:
+                reserva = reservas.pop(0)
+                actualizar_asignacion(dia, reserva.trabajador_id, clave_descubierta.id)
+                log_turno_modificado(dia, reserva.trabajador_id, reserva.clave_id, clave_descubierta.id)
 
 
 def obtener_clave(dia, trabajador, grafico, claves, asignaciones_existentes):
@@ -91,6 +114,8 @@ def generar_turnos(anho):
                     )
 
                     insertar_asignacion(dia, trabajador.id, clave_id)
+
+                    log_turno_asignado(dia, trabajador.nombre, clave_id)
                     asignaciones_existentes.add((dia, clave_id))
 
                 else:
@@ -98,6 +123,9 @@ def generar_turnos(anho):
                         f"Advertencia: El trabajador {trabajador.nombre} tiene un gráfico no encontrado: {id_grafico}")
             else:
                 print("Advertencia: No hay gráficos disponibles.")
+
+    # Nueva pasada para cubrir turnos descubiertos con reservas
+    cubrir_turnos_descubiertos_con_reservas(anho)
 
 
 if __name__ == "__main__":

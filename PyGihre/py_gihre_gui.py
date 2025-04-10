@@ -2,8 +2,31 @@ import tkinter as tk
 import tkinter.simpledialog as simpledialog
 from tkinter import ttk
 
-from db.py_gihre_db import obtener_trabajadores, obtener_asignaciones_dia
+from db.py_gihre_db import obtener_trabajadores, obtener_asignaciones_dia, obtener_claves
 from utils import calcular_rango_anual  # Para obtener el rango de días del año
+
+
+def inserta_fila_turnos_descubiertos(tabla, asignaciones, claves):
+    fila = ["Turnos descubiertos"]
+    claves_trabajo = [clave for clave in claves if clave.tipo.startswith("T")]
+
+    for dia in range(1, 32):
+        asignaciones_dia = asignaciones.get(dia, [])
+        claves_asignadas_ids = {a.clave.id for a in asignaciones_dia}
+        claves_no_asignadas = [str(clave.id) for clave in claves_trabajo if clave.id not in claves_asignadas_ids]
+
+        if claves_no_asignadas:
+            texto = ",".join(claves_no_asignadas)
+        else:
+            texto = "-"
+
+        fila.append(texto)
+
+    # Insertamos la fila en rojo (usamos tag para aplicar estilo)
+    tabla.insert("", "end", values=fila, tags=("descubiertos",))
+
+    # Aplicar color rojo (solo hace falta la primera vez que se use)
+    tabla.tag_configure("descubiertos", foreground="red")
 
 
 def obtener_turnos_por_mes(mes, anho):
@@ -27,6 +50,7 @@ def generar_tabla():
     mes = mes_combobox.get()  # Obtenemos el mes seleccionado
     anho = 2025  # Podemos añadir un selector para el año más tarde
     asignaciones = obtener_turnos_por_mes(mes, anho)
+    claves = obtener_claves()
 
     # Limpiar la tabla existente
     for row in tabla.get_children():
@@ -45,9 +69,16 @@ def generar_tabla():
                 if asignacion.trabajador_id == trabajador.id:  # Comprobamos si la asignación corresponde a este trabajador
                     id_asignacion = asignacion.clave.id
                     break
-            fila.append(id_asignacion if id_asignacion else "-")  # Añadir la asignación o un guión si no existe
+
+            if id_asignacion is None:
+                id_asignacion = "-"
+
+            fila.append(id_asignacion)  # Añadir la asignación o un guión si no existe
 
         tabla.insert("", "end", values=fila)
+
+    # Añadir la fila de turnos no asignados
+    inserta_fila_turnos_descubiertos(tabla, asignaciones, claves)
 
 
 def on_item_click(event):

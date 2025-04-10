@@ -37,17 +37,6 @@ def obtener_graficos():
         return session.query(Grafico).all()
 
 
-def obtener_asignaciones_dia(dia: int):
-    with SessionLocal() as session:
-        asignaciones = (
-            session.query(Asignacion)
-            .filter(Asignacion.dia == dia)
-            .options(joinedload(Asignacion.clave))
-            .all()
-        )
-    return asignaciones
-
-
 def obtener_asignacion(dia: int, trabajador_id: int):
     """
     Devuelve la clave asignada a un trabajador en un día concreto.
@@ -71,6 +60,25 @@ def insertar_asignacion(dia: int, trabajador_id: int, clave_id: int):
     with SessionLocal() as session:
         nueva = Asignacion(dia=dia, trabajador_id=trabajador_id, clave_id=clave_id)
         session.add(nueva)
+        session.commit()
+
+
+def obtener_asignaciones_dia(dia: int):
+    with SessionLocal() as session:
+        return session.query(Asignacion).options(joinedload(Asignacion.clave)).filter(Asignacion.dia == dia).all()
+
+
+def actualizar_asignacion(dia: int, trabajador_id: int, clave_id: int):
+    """Actualiza (o crea) una asignación para un trabajador en un día concreto."""
+    with SessionLocal() as session:
+        asignacion = session.query(Asignacion).filter_by(dia=dia, trabajador_id=trabajador_id).first()
+
+        if asignacion:
+            asignacion.clave_id = clave_id  # Modificamos la clave existente
+        else:
+            nueva = Asignacion(dia=dia, trabajador_id=trabajador_id, clave_id=clave_id)
+            session.add(nueva)
+
         session.commit()
 
 
